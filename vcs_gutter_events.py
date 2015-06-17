@@ -16,6 +16,10 @@ def plugin_loaded():
 _live_mode = True
 _non_blocking = False
 
+class VcsGutterReload(sublime_plugin.TextCommand):
+    def run(self, edit):
+        ViewCollection.reset_vcs_times()
+        ViewCollection.add(self.view)
 
 class VcsGutterEvents(sublime_plugin.EventListener):
     def __init__(self):

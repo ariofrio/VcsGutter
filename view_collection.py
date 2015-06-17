@@ -29,16 +29,20 @@ class ViewCollection:
             'svn': 'svn'
         })
 
-        key = None
-        if GitHelper.is_git_repository(view):
-            key = 'git'
-            klass = GitGutterHandler
-        elif HgHelper.is_hg_repository(view):
-            key = 'hg'
-            klass = HgGutterHandler
-        elif SvnHelper.is_svn_repository(view):
-            key = 'svn'
-            klass = SvnGutterHandler
+        vcs_checkers = {
+            'git': GitHelper.is_git_repository,
+            'hg': HgHelper.is_hg_repository,
+            'svn': SvnHelper.is_svn_repository
+        }
+        vcs_classes = {
+            'git': GitGutterHandler,
+            'hg': HgGutterHandler,
+            'svn': SvnGutterHandler
+        }
+        vcs_order = settings.get('vcs_order', ['git', 'hg', 'svn'])
+
+        key = next((x for x in vcs_order if vcs_checkers[x](view)), None)
+        klass = vcs_classes[key] if key else None
 
         handler = None
         if key is not None:
@@ -85,6 +89,10 @@ class ViewCollection:
         if not key in ViewCollection.vcs_times:
             ViewCollection.vcs_times[key] = 0
         return time.time() - ViewCollection.vcs_times[key]
+
+    @staticmethod
+    def reset_vcs_times():
+        ViewCollection.vcs_times.clear()
 
     @staticmethod
     def update_vcs_time(view):
