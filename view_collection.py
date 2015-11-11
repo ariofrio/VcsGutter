@@ -74,22 +74,12 @@ class ViewCollection:
         return view.file_name()
 
     @staticmethod
-    def diff(view):
+    def diff(view, update_vcs):
         key = ViewCollection.get_key(view)
         try:
-            result = ViewCollection.views[key].diff()
+            result = ViewCollection.views[key].diff(update_vcs=update_vcs)
         except KeyError:
             result = ([], [], [])
-
-        return result
-
-    @staticmethod
-    def diff_update(view):
-        key = ViewCollection.get_key(view)
-        try:
-            result = ViewCollection.views[key].diff_update()
-        except KeyError:
-            result = lambda: ([], [], [])
 
         return result
 

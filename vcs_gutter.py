@@ -3,8 +3,10 @@ import sublime_plugin
 import threading
 try:
     from .view_collection import ViewCollection
+    from .vcs_gutter_events import _non_blocking
 except ValueError:
     from view_collection import ViewCollection
+    from vcs_gutter_events import _non_blocking
 
 def plugin_loaded():
     """
@@ -30,20 +32,23 @@ class VcsGutterCommand(sublime_plugin.WindowCommand):
             # View is not ready yet, try again later.
             sublime.set_timeout(self.run, 1)
             return
-        self.clear_all()
 
         def code():
             try:
                 inserted, modified, deleted = ViewCollection.diff(self.view, update_vcs=True)
-            except Exception as e:
-                print("Exception in VcsGutterCommand thread", e)
+            except InterruptedError as e:
+                print("InterruptedError in VcsGutterCommand thread", e)
                 return
+            self.clear_all()
             self.lines_removed(deleted)
             self.bind_icons('inserted', inserted)
             self.bind_icons('changed', modified)
 
-        thread = threading.Thread(target=code, name='Thread for VcsGutterCommand')
-        thread.start()
+        if _non_blocking:
+            thread = threading.Thread(target=code, name='Thread for VcsGutterCommand')
+            thread.start()
+        else:
+            code()
 
     def clear_all(self):
         for region_name in self.region_names:

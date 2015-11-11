@@ -3,7 +3,6 @@ import os
 import sublime
 import subprocess
 import re
-import threading
 
 try:
     from . import vcs_helpers
@@ -14,9 +13,6 @@ try:
     from .view_collection import ViewCollection
 except ValueError:
     from view_collection import ViewCollection
-
-global_proc_lock = threading.Lock()
-global_proc = None
 
 class VcsGutterHandler(object):
     def __init__(self, view, exc_path):
@@ -155,17 +151,12 @@ class VcsGutterHandler(object):
             return ([], [], [])
 
     def run_command(self, args):
-        global_proc_lock.acquire()
-        if global_proc:
-            global_proc.terminate()
-            global_proc = None
-
         startupinfo = None
         if os.name == 'nt':
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         try:
-            global_proc = subprocess.Popen(args, stdout=subprocess.PIPE,
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     startupinfo=startupinfo)
         except OSError as e:
@@ -176,9 +167,8 @@ class VcsGutterHandler(object):
         except Exception as e:
             print('Vcs Gutter: Failed to run command %r: %r' % (args[0], e))
             return ''
-
-        global_proc_lock.release()
-        return global_proc.stdout.read()
+            
+        return proc.stdout.read()
 
 
 class GitGutterHandler(VcsGutterHandler):
