@@ -1,10 +1,10 @@
 import sublime
 import sublime_plugin
+import threading
 try:
     from .view_collection import ViewCollection
 except ValueError:
     from view_collection import ViewCollection
-
 
 def plugin_loaded():
     """
@@ -31,10 +31,19 @@ class VcsGutterCommand(sublime_plugin.WindowCommand):
             sublime.set_timeout(self.run, 1)
             return
         self.clear_all()
-        inserted, modified, deleted = ViewCollection.diff(self.view)
-        self.lines_removed(deleted)
-        self.bind_icons('inserted', inserted)
-        self.bind_icons('changed', modified)
+
+        def code():
+            try:
+                inserted, modified, deleted = ViewCollection.diff(self.view, update_vcs=True)
+            except Exception as e:
+                print("Exception in VcsGutterCommand thread", e)
+                return
+            self.lines_removed(deleted)
+            self.bind_icons('inserted', inserted)
+            self.bind_icons('changed', modified)
+
+        thread = threading.Thread(target=code, name='Thread for VcsGutterCommand')
+        thread.start()
 
     def clear_all(self):
         for region_name in self.region_names:

@@ -17,7 +17,7 @@ class VcsGutterBaseChangeCommand(sublime_plugin.WindowCommand):
     def run(self):
         view = self.window.active_view()
 
-        inserted, modified, deleted = ViewCollection.diff(view)
+        inserted, modified, deleted = ViewCollection.diff(view, update_vcs=False)
         inserted = self.lines_to_blocks(inserted)
         modified = self.lines_to_blocks(modified)
         all_changes = sorted(inserted + modified + deleted)

@@ -3,6 +3,7 @@ import os
 import sublime
 import subprocess
 import re
+import threading
 
 try:
     from . import vcs_helpers
@@ -14,6 +15,8 @@ try:
 except ValueError:
     from view_collection import ViewCollection
 
+global_proc_lock = threading.Lock()
+global_proc = None
 
 class VcsGutterHandler(object):
     def __init__(self, view, exc_path):
@@ -128,7 +131,7 @@ class VcsGutterHandler(object):
         else:
             return (inserted, modified, deleted)
 
-    def diff(self):
+    def diff(self, update_vcs):
         settings = sublime.load_settings('VcsGutter.sublime-settings')
         vcs_paths = settings.get('vcs_paths', {'diff': 'diff'})
         try:
@@ -138,7 +141,8 @@ class VcsGutterHandler(object):
             diff_path = 'diff'
 
         if self.on_disk() and self.vcs_path:
-            self.update_vcs_file()
+            if update_vcs:
+                self.update_vcs_file()
             self.update_buf_file()
             args = [
                 diff_path,
@@ -151,12 +155,17 @@ class VcsGutterHandler(object):
             return ([], [], [])
 
     def run_command(self, args):
+        global_proc_lock.acquire()
+        if global_proc:
+            global_proc.terminate()
+            global_proc = None
+
         startupinfo = None
         if os.name == 'nt':
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         try:
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE,
+            global_proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     startupinfo=startupinfo)
         except OSError as e:
@@ -167,8 +176,9 @@ class VcsGutterHandler(object):
         except Exception as e:
             print('Vcs Gutter: Failed to run command %r: %r' % (args[0], e))
             return ''
-            
-        return proc.stdout.read()
+
+        global_proc_lock.release()
+        return global_proc.stdout.read()
 
 
 class GitGutterHandler(VcsGutterHandler):
