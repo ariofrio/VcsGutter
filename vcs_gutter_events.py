@@ -65,7 +65,8 @@ class VcsGutterEvents(sublime_plugin.EventListener):
         if not _live_mode:
             return None
 
-        ViewCollection.add(view)
+        if not _non_blocking:
+            ViewCollection.add(view)
 
     # Asynchronous
 
