@@ -1,10 +1,8 @@
 import sublime_plugin
 try:
     from .view_collection import ViewCollection
-    from .vcs_gutter_events import _live_mode
 except ImportError:
     from view_collection import ViewCollection
-    from vcs_gutter_events import _live_mode
 
 class VcsGutterBaseChangeCommand(sublime_plugin.WindowCommand):
     def lines_to_blocks(self, lines):
