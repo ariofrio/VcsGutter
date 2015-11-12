@@ -3,10 +3,10 @@ import sublime_plugin
 import threading
 try:
     from .view_collection import ViewCollection
-    from .vcs_gutter_events import _non_blocking
+    from . import vcs_gutter_events as config
 except ValueError:
     from view_collection import ViewCollection
-    from vcs_gutter_events import _non_blocking
+    import vcs_gutter_events as config
 
 def plugin_loaded():
     """
@@ -44,7 +44,7 @@ class VcsGutterCommand(sublime_plugin.WindowCommand):
             self.bind_icons('inserted', inserted)
             self.bind_icons('changed', modified)
 
-        if _non_blocking:
+        if config._non_blocking:
             thread = threading.Thread(target=code, name='Thread for VcsGutterCommand')
             thread.start()
         else:
