@@ -80,7 +80,9 @@ class VcsGutterHandler(object):
         # so we can easily wait 5 seconds
         # between updates for performance
         if ViewCollection.vcs_time(self.view) > 5:
-            open(self.vcs_temp_file.name, 'w').close()
+            # open(self.vcs_temp_file.name, 'w').close()
+                # [ariofrio] Don't reset the VCS temp file because other threads
+                # might want to use the previous version.
             args = self.get_diff_args()
             try:
                 contents = self.run_command(args)
